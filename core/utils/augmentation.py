@@ -56,7 +56,7 @@ def mix_colors(x, photo_aug):
     return x
 
 
-def transformsXY(path, bb, transforms):
+def transformsXY(path, bb, transforms, photo_aug):
     x = cv2.imread(str(path)).astype(np.float32)
     x = cv2.cvtColor(x, cv2.COLOR_BGR2RGB)/255
     Y = create_mask(bb, x)
@@ -68,7 +68,7 @@ def transformsXY(path, bb, transforms):
             x = np.fliplr(x).copy()
             Y = np.fliplr(Y).copy()
         x, Y = random_cropXY(x, Y)
-        x = mix_colors(x, ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.5 / 3.14))
+        x = mix_colors(x, photo_aug)
     else:
         x, Y = center_crop(x), center_crop(Y)
     return x, mask_to_bb(Y)

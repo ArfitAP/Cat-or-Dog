@@ -40,8 +40,8 @@ def show(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--filename', default='Cats_Test445.png', help="image name")
-    parser.add_argument('--annotations', default='Cats_Test445.xml', help="annotations xml file")
+    parser.add_argument('--filename', default='Cats_Test0.png', help="image name")
+    parser.add_argument('--annotations', default='Cats_Test0.xml', help="annotations xml file")
 
     args = parser.parse_args()
 
