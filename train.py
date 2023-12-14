@@ -5,7 +5,8 @@ from core.utils.utils import count_parameters
 sys.path.append('..\\')
 sys.path.append('core')
 
-from models.BB_Model import BB_model
+import torch
+from core.BB_Model import BB_model
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
 from core.data import get_train_dataframe
@@ -15,12 +16,17 @@ import torch.nn.functional as F
 import argparse
 
 
-def fetch_optimizer(model, lr=0.005):
+def fetch_optimizer(model, args, data_len):
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = optim.Adam(parameters, lr=lr)
+    optimizer = optim.Adam(parameters, lr=args.lr)
 
-    return optimizer
+    steps_per_epoch = int(data_len / args.bs)
+    scheduler = optim.lr_scheduler.OneCycleLR(optimizer, args.lr, steps_per_epoch=steps_per_epoch,
+                                              epochs=args.epochs + 1, pct_start=0.1, cycle_momentum=False,
+                                              anneal_strategy='linear')
+
+    return optimizer, scheduler
 
 
 def fetch_dataloader(batch_size):
@@ -39,10 +45,11 @@ def fetch_dataloader(batch_size):
     train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
     valid_dl = DataLoader(valid_ds, batch_size=batch_size)
 
-    return train_dl, valid_dl
+    return train_dl, valid_dl, len(X_train)
 
 
-def train_epocs(model, optimizer, train_dl, val_dl, epochs=10, C=1000):
+def train_epocs(model, optimizer, scheduler, train_dl, val_dl, epochs=10, C=1000):
+    train_loss = 0
     idx = 0
     for i in range(epochs):
         model.train()
@@ -61,14 +68,19 @@ def train_epocs(model, optimizer, train_dl, val_dl, epochs=10, C=1000):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            scheduler.step()
             idx += 1
             total += batch
             sum_loss += loss.item()
         train_loss = sum_loss/total
         #val_loss, val_acc = val_metrics(model, valid_dl, C)
         #print("train_loss %.3f val_loss %.3f val_acc %.3f" % (train_loss, val_loss, val_acc))
-        print("train_loss %.3f" % (train_loss))
-    return sum_loss/total
+        print("epoch:" + str(i) + ", train_loss %.3f" % (train_loss))
+
+    PATH = './models/BB_model.pth'
+    torch.save(model.state_dict(), PATH)
+
+    return train_loss
 
 
 def train(args):
@@ -77,22 +89,22 @@ def train(args):
     print("Number of parameters: " + str(count_parameters(model)))
     print("Preparing data ...")
 
-    optimizer = fetch_optimizer(model, args.lr)
-    train_dl, valid_dl = fetch_dataloader(args.bs)
+    train_dl, valid_dl, data_len = fetch_dataloader(args.bs)
+    optimizer, scheduler = fetch_optimizer(model, args, data_len)
 
     print("Training started")
 
-    train_epocs(model, optimizer, train_dl, valid_dl, epochs=args.epoch)
+    train_epocs(model, optimizer, scheduler, train_dl, valid_dl, epochs=args.epochs)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--lr', type=float, default='0.005', help="learning rate")
     parser.add_argument('--bs', type=int, default='32', help="batch size")
-    parser.add_argument('--epoch', type=int, default='10', help="epochs")
+    parser.add_argument('--epochs', type=int, default='10', help="epochs")
 
     args = parser.parse_args()
 
-    print("learning rate = " + str(args.lr) + ", batch size = " + str(args.bs) + ", epochs = " + str(args.epoch))
+    print("learning rate = " + str(args.lr) + ", batch size = " + str(args.bs) + ", epochs = " + str(args.epochs))
 
     train(args)
