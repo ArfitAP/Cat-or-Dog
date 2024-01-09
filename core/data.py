@@ -1,4 +1,4 @@
-from core.utils.BB_utils import resize_image_bb, create_bb_array
+from core.utils.BB_utils import resize_image_bb, resize_bb, create_bb_array
 from core.utils.utils import filelist
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -45,6 +45,26 @@ def get_train_dataframe(anno_path, images_path):
     df_train['new_bb'] = new_bbs
 
     return df_train
+
+
+def get_validation_dataframe(anno_path, images_path):
+    df_valid = generate_train_df(anno_path, images_path)
+
+    class_dict = {'cat': 0, 'dog': 1}
+    df_valid['class'] = df_valid['class'].apply(lambda x: class_dict[x])
+
+    # Populating Validation DF with new paths and bounding boxes
+    new_paths = []
+    new_bbs = []
+    train_path_resized = Path(str(images_path) + '_resized')
+    for index, row in df_valid.iterrows():
+        new_path, new_bb = resize_bb(row['filename'], train_path_resized, create_bb_array(row.values), 300)
+        new_paths.append(new_path)
+        new_bbs.append(new_bb)
+    df_valid['new_path'] = new_paths
+    df_valid['new_bb'] = new_bbs
+
+    return df_valid
 
 
 def generate_one_df(anno_path, image_path):

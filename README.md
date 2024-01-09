@@ -8,12 +8,17 @@ https://www.kaggle.com/datasets/andrewmvd/dog-and-cat-detection
 # Demo
 Show demo with following command:
 ```
-cd .\visualization
-python demo.py
+python demo.py --image_path {path to image} --model_path {path to model}
 ```
 
 # Training
 Start training with following command:
 ```
 python train.py --lr {learning rate} --bs {batch size} --epoch {epochs}
+```
+
+# Validation
+Start validation with following command:
+```
+python validate.py --model_path {path to model}
 ```

@@ -40,6 +40,14 @@ def resize_image_bb(read_path,write_path,bb,sz):
     return new_path, mask_to_bb(Y_resized)
 
 
+def resize_bb(read_path,write_path,bb,sz):
+    """Resize an image and its bounding box without writing image to new path"""
+    im = read_image(read_path)
+    Y_resized = cv2.resize(create_mask(bb, im), (int(1.5*sz), sz))
+    new_path = str(write_path/read_path.parts[-1])
+    return new_path, mask_to_bb(Y_resized)
+
+
 def create_corner_rect(bb, color='red'):
     bb = np.array(bb, dtype=np.float32)
     return plt.Rectangle((bb[1], bb[0]), bb[3]-bb[1], bb[2]-bb[0], color=color,
